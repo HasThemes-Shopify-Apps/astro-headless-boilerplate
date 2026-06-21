@@ -1,0 +1,66 @@
+---
+// ============================================================
+//  Header — sticky top bar. Desktop: nav · logo · actions.
+//  Mobile: logo · actions (primary nav lives in the bottom bar).
+//  Nav is pulled from Shopify's "main-menu" with a safe fallback.
+// ============================================================
+import Logo from '~/components/ui/Logo.astro';
+import CartButton from '~/components/react/CartButton.tsx';
+import PredictiveSearch from '~/components/react/PredictiveSearch.tsx';
+import { getMenu } from '~/lib/shopify';
+import { FALLBACK_NAV } from '~/config/site';
+
+// Map a Shopify menu URL (absolute, store-domain) to a relative path.
+function toPath(url: string): string {
+  try {
+    const u = new URL(url);
+    return u.pathname + u.search;
+  } catch {
+    return url;
+  }
+}
+
+let nav = FALLBACK_NAV.map((n) => ({ title: n.title, url: n.url }));
+try {
+  const menu = await getMenu('main-menu');
+  if (menu?.items?.length) {
+    nav = menu.items.map((i) => ({ title: i.title, url: toPath(i.url) }));
+  }
+} catch {
+  /* keep fallback nav */
+}
+---
+
+<header class="sticky top-0 z-40 border-b border-line bg-snow/85 backdrop-blur-md">
+  <div class="wrap grid h-16 grid-cols-[1fr_auto_1fr] items-center md:h-[4.5rem]">
+    {/* Left — desktop nav / mobile logo */}
+    <div class="flex items-center justify-start gap-7">
+      <nav class="hidden items-center gap-7 md:flex" aria-label="Primary">
+        {
+          nav.map((item) => (
+            <a
+              href={item.url}
+              class="text-sm font-medium text-graphite transition-fluid hover:text-ink"
+            >
+              {item.title}
+            </a>
+          ))
+        }
+      </nav>
+      <div class="md:hidden">
+        <Logo />
+      </div>
+    </div>
+
+    {/* Center — logo (desktop) */}
+    <div class="hidden justify-self-center md:block">
+      <Logo />
+    </div>
+
+    {/* Right — actions */}
+    <div class="flex items-center justify-end gap-0.5">
+      <PredictiveSearch client:idle />
+      <CartButton client:load />
+    </div>
+  </div>
+</header>

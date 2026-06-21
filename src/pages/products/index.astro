@@ -1,0 +1,60 @@
+---
+// ============================================================
+//  All products — PLP with sort + cursor pagination.
+// ============================================================
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import PageHeader from '~/components/layout/PageHeader.astro';
+import ProductListing from '~/components/product/ProductListing.astro';
+import { getProducts, PRODUCT_SORT_OPTIONS, resolveSort } from '~/lib/shopify';
+import { paginationUrls } from '~/lib/pagination';
+import type { ProductCard } from '~/lib/shopify/types';
+
+const url = Astro.url;
+const sortValue = url.searchParams.get('sort') ?? PRODUCT_SORT_OPTIONS[0].value;
+const sort = resolveSort(PRODUCT_SORT_OPTIONS, sortValue);
+const after = url.searchParams.get('after');
+const before = url.searchParams.get('before');
+
+let products: ProductCard[] = [];
+let prevUrl: string | null = null;
+let nextUrl: string | null = null;
+let loadError = false;
+
+try {
+  const page = await getProducts({
+    pageSize: 12,
+    after,
+    before,
+    sortKey: sort.sortKey,
+    reverse: sort.reverse,
+  });
+  products = page.items;
+  ({ prevUrl, nextUrl } = paginationUrls(url, page.pageInfo));
+} catch (err) {
+  console.error('[products] load failed:', (err as Error).message);
+  loadError = true;
+}
+
+const countLabel = loadError
+  ? 'Catalogue unavailable'
+  : `${products.length} product${products.length === 1 ? '' : 's'} on this page`;
+---
+
+<BaseLayout title="All products" description="The full range — every piece in the catalogue.">
+  <PageHeader
+    eyebrow="Catalogue"
+    title="All products"
+    description="The full range — everyday staples and seasonal pieces, all in one place."
+  />
+  <div class="wrap py-10 md:py-12">
+    <ProductListing
+      products={products}
+      countLabel={countLabel}
+      sortOptions={PRODUCT_SORT_OPTIONS}
+      sortValue={sort.value}
+      sortAction="/products"
+      prevUrl={prevUrl}
+      nextUrl={nextUrl}
+    />
+  </div>
+</BaseLayout>

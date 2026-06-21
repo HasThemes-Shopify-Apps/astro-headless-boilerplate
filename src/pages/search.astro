@@ -1,0 +1,69 @@
+---
+// ============================================================
+//  Search results — full product search, sort + pagination.
+// ============================================================
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import PageHeader from '~/components/layout/PageHeader.astro';
+import ProductListing from '~/components/product/ProductListing.astro';
+import { searchProducts, SEARCH_SORT_OPTIONS, resolveSort } from '~/lib/shopify';
+import { paginationUrls } from '~/lib/pagination';
+import type { ProductCard } from '~/lib/shopify/types';
+
+const url = Astro.url;
+const q = (url.searchParams.get('q') ?? '').trim();
+const sortValue = url.searchParams.get('sort') ?? SEARCH_SORT_OPTIONS[0].value;
+const sort = resolveSort(SEARCH_SORT_OPTIONS, sortValue);
+const after = url.searchParams.get('after');
+const before = url.searchParams.get('before');
+
+let products: ProductCard[] = [];
+let total = 0;
+let prevUrl: string | null = null;
+let nextUrl: string | null = null;
+
+if (q) {
+  try {
+    const page = await searchProducts({
+      query: q,
+      pageSize: 12,
+      after,
+      before,
+      sortKey: sort.sortKey,
+      reverse: sort.reverse,
+    });
+    products = page.items;
+    total = page.totalCount;
+    ({ prevUrl, nextUrl } = paginationUrls(url, page.pageInfo));
+  } catch (err) {
+    console.error('[search] load failed:', (err as Error).message);
+  }
+}
+
+const countLabel = q ? `${total} result${total === 1 ? '' : 's'} for “${q}”` : 'Enter a search term';
+---
+
+<BaseLayout title={q ? `Search · ${q}` : 'Search'} description="Search the full catalogue.">
+  <PageHeader eyebrow="Search" title={q ? q : 'Search'} />
+  <div class="wrap py-10 md:py-12">
+    {
+      q ? (
+        <ProductListing
+          products={products}
+          countLabel={countLabel}
+          sortOptions={SEARCH_SORT_OPTIONS}
+          sortValue={sort.value}
+          sortAction="/search"
+          sortHidden={{ q }}
+          prevUrl={prevUrl}
+          nextUrl={nextUrl}
+          emptyTitle="No matches"
+          emptyBody={`Nothing matched “${q}”. Try another term.`}
+        />
+      ) : (
+        <p class="py-16 text-center text-graphite">
+          Use the search icon in the header to find products and collections.
+        </p>
+      )
+    }
+  </div>
+</BaseLayout>

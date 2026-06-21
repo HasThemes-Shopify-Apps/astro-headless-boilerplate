@@ -1,0 +1,76 @@
+---
+// Top ticker — seamless marquee of brand announcements.
+import { SITE } from '~/config/site';
+const items = SITE.announcements;
+// Duplicate the track so the loop is seamless (visual only).
+const track = [...items, ...items, ...items, ...items];
+---
+
+<div class="bg-ink text-snow">
+  {/* Screen readers get the announcements once, not 4x. */}
+  <p class="sr-only">{items.join('. ')}.</p>
+
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee__track" tabindex="0">
+      {
+        track.map((item) => (
+          <span class="marquee__item eyebrow">
+            {item}
+            <span class="marquee__dot">/</span>
+          </span>
+        ))
+      }
+    </div>
+  </div>
+</div>
+
+<style>
+  .marquee {
+    overflow: hidden;
+    white-space: nowrap;
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent,
+      #000 6%,
+      #000 94%,
+      transparent
+    );
+    mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+  }
+  .marquee__track {
+    display: inline-flex;
+    align-items: center;
+    padding-block: 0.5rem;
+    animation: marquee 38s linear infinite;
+    will-change: transform;
+  }
+  /* WCAG 2.2.2 — let users stop the motion. */
+  .marquee:hover .marquee__track,
+  .marquee__track:focus,
+  .marquee__track:focus-visible {
+    animation-play-state: paused;
+    outline: none;
+  }
+  .marquee__item {
+    display: inline-flex;
+    align-items: center;
+    color: var(--color-snow);
+    opacity: 0.92;
+  }
+  .marquee__dot {
+    margin-inline: 1.75rem;
+    color: var(--color-accent);
+  }
+  @keyframes marquee {
+    to {
+      transform: translateX(-50%);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .marquee__track {
+      animation: none;
+      justify-content: center;
+      width: 100%;
+    }
+  }
+</style>

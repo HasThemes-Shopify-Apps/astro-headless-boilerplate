@@ -1,0 +1,42 @@
+---
+// ============================================================
+//  Collections index — every collection as a card.
+// ============================================================
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import PageHeader from '~/components/layout/PageHeader.astro';
+import CollectionCard from '~/components/collection/CollectionCard.astro';
+import { getAllCollections } from '~/lib/shopify';
+import type { Collection } from '~/lib/shopify/types';
+
+let collections: Collection[] = [];
+let loadError = false;
+try {
+  collections = await getAllCollections();
+} catch (err) {
+  console.error('[collections] load failed:', (err as Error).message);
+  loadError = true;
+}
+---
+
+<BaseLayout title="Collections" description="Shop the full range by collection.">
+  <PageHeader
+    eyebrow="Browse"
+    title="Collections"
+    description="Curated edits for every part of the rotation."
+  />
+  <div class="wrap py-12 md:py-16">
+    {
+      collections.length > 0 ? (
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 md:gap-6">
+          {collections.map((c) => (
+            <CollectionCard collection={c} class="reveal" />
+          ))}
+        </div>
+      ) : (
+        <p class="py-16 text-center text-graphite">
+          {loadError ? 'Collections are unavailable right now.' : 'No collections yet.'}
+        </p>
+      )
+    }
+  </div>
+</BaseLayout>

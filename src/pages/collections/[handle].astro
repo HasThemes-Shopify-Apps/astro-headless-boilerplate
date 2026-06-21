@@ -1,0 +1,101 @@
+---
+// ============================================================
+//  Collection PLP — products in a collection, sort + pagination.
+// ============================================================
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import PageHeader from '~/components/layout/PageHeader.astro';
+import ProductListing from '~/components/product/ProductListing.astro';
+import { getCollection, COLLECTION_SORT_OPTIONS, resolveSort } from '~/lib/shopify';
+import { paginationUrls } from '~/lib/pagination';
+import type { CollectionWithProducts } from '~/lib/shopify/types';
+
+const { handle } = Astro.params;
+const url = Astro.url;
+const sortValue = url.searchParams.get('sort') ?? COLLECTION_SORT_OPTIONS[0].value;
+const sort = resolveSort(COLLECTION_SORT_OPTIONS, sortValue);
+const after = url.searchParams.get('after');
+const before = url.searchParams.get('before');
+
+let collection: CollectionWithProducts | null = null;
+let prevUrl: string | null = null;
+let nextUrl: string | null = null;
+let loadFailed = false;
+
+try {
+  collection = await getCollection({
+    handle: handle!,
+    pageSize: 12,
+    after,
+    before,
+    sortKey: sort.sortKey,
+    reverse: sort.reverse,
+  });
+} catch (err) {
+  loadFailed = true;
+  console.error('[collection] load failed:', (err as Error).message);
+}
+
+// 404 only for a genuinely missing collection; transient errors → 503.
+if (loadFailed) {
+  Astro.response.status = 503;
+} else if (!collection) {
+  Astro.response.status = 404;
+}
+
+if (collection) {
+  ({ prevUrl, nextUrl } = paginationUrls(url, collection.products.pageInfo));
+}
+
+const items = collection?.products.items ?? [];
+const countLabel = `${items.length} product${items.length === 1 ? '' : 's'} on this page`;
+---
+
+{
+  collection ? (
+    <BaseLayout
+      title={collection.seo?.title ?? collection.title}
+      description={collection.seo?.description ?? collection.description}
+    >
+      <PageHeader
+        eyebrow="Collection"
+        title={collection.title}
+        description={collection.description || undefined}
+      />
+      <div class="wrap py-10 md:py-12">
+        <ProductListing
+          products={items}
+          countLabel={countLabel}
+          sortOptions={COLLECTION_SORT_OPTIONS}
+          sortValue={sort.value}
+          sortAction={`/collections/${handle}`}
+          prevUrl={prevUrl}
+          nextUrl={nextUrl}
+          emptyTitle="Nothing in this collection yet"
+          emptyBody="This collection is empty right now. Check back soon."
+        />
+      </div>
+    </BaseLayout>
+  ) : (
+    <BaseLayout title={loadFailed ? 'Something went wrong' : 'Collection not found'}>
+      <div class="wrap flex flex-col items-center py-28 text-center">
+        <p class="eyebrow text-accent-strong">{loadFailed ? 'Error 503' : 'Error 404'}</p>
+        <h1 class="masthead mt-3 text-4xl uppercase">
+          {loadFailed ? 'Something went wrong' : 'Collection not found'}
+        </h1>
+        <p class="mt-3 text-graphite">
+          {
+            loadFailed
+              ? "We couldn't load this collection right now. Please try again shortly."
+              : "We couldn't find that collection."
+          }
+        </p>
+        <a
+          href="/collections"
+          class="mt-6 inline-flex h-11 items-center rounded-md bg-ink px-6 text-sm font-medium text-snow transition-fluid hover:bg-graphite"
+        >
+          All collections
+        </a>
+      </div>
+    </BaseLayout>
+  )
+}

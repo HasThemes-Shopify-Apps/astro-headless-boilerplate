@@ -1,14 +1,72 @@
 ---
-import Welcome from "../components/Welcome.astro";
-import Layout from "../layouts/Layout.astro";
+// ============================================================
+//  Home — editorial storefront landing.
+// ============================================================
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import Hero from '~/components/home/Hero.astro';
+import ValueProps from '~/components/home/ValueProps.astro';
+import EditorialBanner from '~/components/home/EditorialBanner.astro';
+import FeaturedCollections from '~/components/home/FeaturedCollections.astro';
+import SectionHeading from '~/components/ui/SectionHeading.astro';
+import ProductGrid from '~/components/product/ProductGrid.astro';
+import { getProducts, getAllCollections } from '~/lib/shopify';
+import type { Collection, ProductCard } from '~/lib/shopify/types';
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+let products: ProductCard[] = [];
+let collections: Collection[] = [];
+let loadError = false;
+
+try {
+  const [productPage, allCollections] = await Promise.all([
+    getProducts({ pageSize: 8, sortKey: 'BEST_SELLING' }),
+    getAllCollections(),
+  ]);
+  products = productPage.items;
+  collections = allCollections;
+} catch (err) {
+  console.error('[home] Shopify load failed:', (err as Error).message);
+  loadError = true;
+}
+
+const featured = products[0] ?? null;
+const bannerImage = products[1]?.featuredImage?.url ?? products[0]?.featuredImage?.url ?? null;
+const bannerHref = collections[0] ? `/collections/${collections[0].handle}` : '/products';
 ---
 
-<Layout>
-  <Welcome />
-  <p class="mt-8 text-center text-2xl font-bold text-indigo-600">
-    Tailwind CSS is working ✅
-  </p>
-</Layout>
+<BaseLayout>
+  {
+    loadError ? (
+      <div class="wrap py-24 text-center">
+        <h1 class="masthead text-4xl uppercase">We hit a whiteout</h1>
+        <p class="mt-3 text-graphite">The catalogue couldn't load right now. Please try again shortly.</p>
+      </div>
+    ) : (
+      <>
+        <Hero featured={featured} />
+        <ValueProps />
+
+        <section class="wrap py-16 md:py-20">
+          <SectionHeading
+            eyebrow="This season"
+            title="Best sellers"
+            href="/products"
+            class="mb-8"
+          />
+          <ProductGrid products={products} />
+        </section>
+
+        <EditorialBanner
+          eyebrow="The studio"
+          title="Made better, worn longer"
+          body="Every piece is cut from considered materials and built to outlast the season. No fast fashion. No filler. Just everyday staples you'll actually reach for."
+          href={bannerHref}
+          ctaLabel="Shop the range"
+          imageUrl={bannerImage}
+          imageAlt="Apparel detail"
+        />
+
+        <FeaturedCollections collections={collections} />
+      </>
+    )
+  }
+</BaseLayout>

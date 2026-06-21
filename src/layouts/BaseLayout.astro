@@ -1,0 +1,81 @@
+---
+// ============================================================
+//  BaseLayout — html shell shared by every page. Mounts the
+//  global cart drawer + mobile bottom nav islands once.
+// ============================================================
+import '~/styles/global.css';
+import { SITE } from '~/config/site';
+import Announcement from '~/components/layout/Announcement.astro';
+import Header from '~/components/layout/Header.astro';
+import Footer from '~/components/layout/Footer.astro';
+import CartDrawer from '~/components/react/CartDrawer.tsx';
+import BottomNav from '~/components/react/BottomNav.tsx';
+
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+  noFooter?: boolean;
+}
+
+const { title, description = SITE.description, image, noFooter = false } = Astro.props;
+
+const pageTitle = title ? `${title} · ${SITE.name}` : `${SITE.name} — ${SITE.tagline}`;
+const canonical = new URL(Astro.url.pathname, Astro.url.origin).href;
+const pathname = Astro.url.pathname;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" />
+
+    {/* Fonts — preconnect then load Archivo (display) · Inter (body) · JetBrains Mono (data) */}
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,500..900&family=Inter:wght@300..700&family=JetBrains+Mono:wght@400..700&display=swap"
+    />
+
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta name="theme-color" content="#0e1417" />
+
+    {/* Open Graph / Twitter */}
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE.name} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    {image && <meta property="og:image" content={image} />}
+    <meta name="twitter:card" content={image ? 'summary_large_image' : 'summary'} />
+  </head>
+
+  <body class="flex min-h-dvh flex-col">
+    <a
+      href="#main"
+      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[200] focus:rounded-md focus:bg-ink focus:px-4 focus:py-2 focus:text-snow"
+    >
+      Skip to content
+    </a>
+
+    <Announcement />
+    <Header />
+
+    <main id="main" class="flex-1 pb-20 md:pb-0">
+      <slot />
+    </main>
+
+    {!noFooter && <Footer />}
+
+    {/* Global interactive islands */}
+    <CartDrawer client:load />
+    <BottomNav client:load pathname={pathname} />
+  </body>
+</html>

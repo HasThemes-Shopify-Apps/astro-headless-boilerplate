@@ -1,0 +1,141 @@
+---
+// ============================================================
+//  PDP — product detail. Gallery + buy box + rich text + recs.
+// ============================================================
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import ProductGallery from '~/components/react/ProductGallery.tsx';
+import VariantSelector from '~/components/react/VariantSelector.tsx';
+import ProductGrid from '~/components/product/ProductGrid.astro';
+import SectionHeading from '~/components/ui/SectionHeading.astro';
+import Icon from '~/components/ui/Icon.astro';
+import { SITE } from '~/config/site';
+import { getProduct, getProductRecommendations } from '~/lib/shopify';
+import type { Image, Product, ProductCard } from '~/lib/shopify/types';
+
+const { handle } = Astro.params;
+
+let product: Product | null = null;
+let recommendations: ProductCard[] = [];
+let loadFailed = false;
+
+try {
+  product = await getProduct(handle!);
+} catch (err) {
+  loadFailed = true;
+  console.error('[product] load failed:', (err as Error).message);
+}
+
+// A recommendations failure must not 404 the whole page.
+if (product) {
+  try {
+    recommendations = await getProductRecommendations(product.id, 4);
+  } catch (err) {
+    console.error('[product] recommendations failed:', (err as Error).message);
+  }
+}
+
+// 404 only for a genuinely missing product; transient errors → 503.
+if (loadFailed) {
+  Astro.response.status = 503;
+} else if (!product) {
+  Astro.response.status = 404;
+}
+
+const images: Image[] =
+  product && product.images.length
+    ? product.images
+    : product?.featuredImage
+      ? [product.featuredImage]
+      : [];
+const currency = product?.priceRange.minVariantPrice.currencyCode ?? 'USD';
+const ogImage = product?.featuredImage?.url;
+---
+
+{
+  product ? (
+    <BaseLayout
+      title={product.seo?.title ?? product.title}
+      description={product.seo?.description ?? product.description}
+      image={ogImage}
+    >
+      <div class="wrap py-6 md:py-10">
+        {/* Breadcrumb */}
+        <nav class="mb-6 flex items-center gap-2 font-mono text-xs text-mist" aria-label="Breadcrumb">
+          <a href="/" class="hover:text-ink">Home</a>
+          <Icon name="chevronRight" size={12} />
+          <a href="/products" class="hover:text-ink">Shop</a>
+          <Icon name="chevronRight" size={12} />
+          <span class="truncate text-graphite">{product.title}</span>
+        </nav>
+
+        <div class="grid gap-10 lg:grid-cols-2 lg:gap-14">
+          {/* Gallery */}
+          <ProductGallery client:load images={images} title={product.title} />
+
+          {/* Buy box */}
+          <div class="lg:sticky lg:top-24 lg:self-start">
+            {product.vendor && <p class="eyebrow mb-2 text-accent-strong">{product.vendor}</p>}
+            <h1 class="masthead text-3xl uppercase sm:text-4xl">{product.title}</h1>
+
+            <div class="mt-7">
+              <VariantSelector
+                client:load
+                options={product.options}
+                variants={product.variants}
+                currencyCode={currency}
+              />
+            </div>
+
+            {/* Mini trust row */}
+            <ul class="mt-8 grid gap-3 border-t border-line pt-6">
+              {SITE.valueProps.map((vp) => (
+                <li class="flex items-center gap-3 text-sm text-graphite">
+                  <Icon name={vp.icon} size={17} class="text-ink" />
+                  {vp.title}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        {/* Description */}
+        {product.descriptionHtml && (
+          <section class="mt-16 grid gap-6 border-t border-line pt-12 md:grid-cols-[14rem_1fr] md:gap-12">
+            <h2 class="eyebrow text-graphite">Details</h2>
+            <div class="rte max-w-2xl" set:html={product.descriptionHtml} />
+          </section>
+        )}
+      </div>
+
+      {/* Recommendations */}
+      {recommendations.length > 0 && (
+        <section class="wrap border-t border-line py-16 md:py-20">
+          <SectionHeading eyebrow="More to ride" title="You might also like" class="mb-8" />
+          <ProductGrid products={recommendations} numbered={false} />
+        </section>
+      )}
+    </BaseLayout>
+  ) : (
+    <BaseLayout title={loadFailed ? 'Something went wrong' : 'Product not found'}>
+      <div class="wrap flex flex-col items-center py-28 text-center">
+        <p class="eyebrow text-accent-strong">{loadFailed ? 'Error 503' : 'Error 404'}</p>
+        <h1 class="masthead mt-3 text-4xl uppercase">
+          {loadFailed ? 'Something went wrong' : 'Product not found'}
+        </h1>
+        <p class="mt-3 text-graphite">
+          {
+            loadFailed
+              ? "We couldn't load this product right now. Please try again shortly."
+              : "We couldn't find that product."
+          }
+        </p>
+        <a
+          href="/products"
+          class="mt-6 inline-flex h-11 items-center rounded-md bg-ink px-6 text-sm font-medium text-snow transition-fluid hover:bg-graphite"
+        >
+          Shop all products
+        </a>
+      </div>
+    </BaseLayout>
+  )
+}

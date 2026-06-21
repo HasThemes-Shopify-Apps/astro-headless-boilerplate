@@ -12,8 +12,20 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/node": "^10",
+    "@astrojs/react": "^4",
+    "@nanostores/react": "^0.8",
     "@tailwindcss/vite": "^4.3.1",
     "astro": "^6.4.7",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.20.0",
+    "nanostores": "^0.11",
+    "react": "^19",
+    "react-dom": "^19",
     "tailwindcss": "^4.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "@types/react-dom": "^19"
   }
 }

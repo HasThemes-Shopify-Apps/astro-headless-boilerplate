@@ -1,0 +1,35 @@
+---
+// Custom 404.
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import Contour from '~/components/ui/Contour.astro';
+import Icon from '~/components/ui/Icon.astro';
+---
+
+<BaseLayout title="Page not found (404)">
+  <section class="contour-field">
+    <Contour class="opacity-40" />
+    <div class="wrap flex flex-col items-center py-28 text-center md:py-36">
+      <p class="eyebrow text-accent-strong">Error 404</p>
+      <h1 class="masthead mt-4 text-6xl uppercase sm:text-7xl">Lost the thread</h1>
+      <p class="mt-4 max-w-md text-graphite">
+        This page doesn't exist — the link may be broken or the piece has sold out. Let's get you
+        back to something good.
+      </p>
+      <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
+        <a
+          href="/"
+          class="inline-flex h-11 items-center gap-2 rounded-md bg-ink px-6 text-sm font-medium text-snow transition-fluid hover:bg-graphite"
+        >
+          <Icon name="arrowRight" size={17} />
+          Back home
+        </a>
+        <a
+          href="/products"
+          class="inline-flex h-11 items-center rounded-md border border-ink/20 px-6 text-sm font-medium text-ink transition-fluid hover:border-ink"
+        >
+          Shop all products
+        </a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,104 @@
+---
+// ============================================================
+//  Footer — brand block over a topographic field, link columns,
+//  dispatch (newsletter) sign-up, social + legal bottom bar.
+// ============================================================
+import { SITE } from '~/config/site';
+import Contour from '~/components/ui/Contour.astro';
+import Icon from '~/components/ui/Icon.astro';
+
+const year = new Date().getFullYear();
+---
+
+<footer class="mt-24 border-t border-line bg-paper">
+  <div class="contour-field text-ink">
+    <Contour class="opacity-[0.35]" />
+    <div class="wrap grid gap-12 py-16 md:grid-cols-[1.4fr_2fr] md:py-20">
+      {/* Brand + dispatch */}
+      <div class="max-w-md">
+        <p class="masthead text-3xl uppercase leading-none" style="font-variation-settings:'wght' 800,'wdth' 110;">
+          {SITE.name}
+        </p>
+        <p class="mt-4 text-graphite">{SITE.tagline}</p>
+
+        <form id="dispatch-form" class="mt-8 max-w-sm">
+          <label for="dispatch" class="eyebrow text-graphite">Join the dispatch</label>
+          <div class="mt-2 flex items-center gap-2 border-b border-ink/30 pb-2 focus-within:border-ink">
+            <input
+              id="dispatch"
+              type="email"
+              required
+              placeholder="you@altitude.com"
+              class="w-full bg-transparent text-sm outline-none placeholder:text-mist"
+            />
+            <button
+              type="submit"
+              class="eyebrow shrink-0 text-accent-strong transition-fluid hover:text-ink"
+            >
+              Subscribe
+            </button>
+          </div>
+          <p id="dispatch-done" role="status" aria-live="polite" class="mt-2 hidden text-xs text-success">
+            You're on the list — keep an eye on your inbox.
+          </p>
+        </form>
+      </div>
+
+      {/* Link columns */}
+      <div class="grid grid-cols-2 gap-8 sm:grid-cols-3">
+        {
+          SITE.footerColumns.map((col) => (
+            <nav aria-label={col.title}>
+              <p class="eyebrow text-mist">{col.title}</p>
+              <ul class="mt-4 flex flex-col gap-2.5">
+                {col.links.map((link) => (
+                  <li>
+                    <a
+                      href={link.href}
+                      class="text-sm text-graphite transition-fluid hover:text-ink"
+                    >
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          ))
+        }
+      </div>
+    </div>
+
+    {/* Bottom bar */}
+    <div class="wrap flex flex-col gap-4 border-t border-line py-6 sm:flex-row sm:items-center sm:justify-between">
+      <p class="font-mono text-xs text-mist">
+        © {year} {SITE.name} — built with Astro + Shopify Storefront API
+      </p>
+      <div class="flex items-center gap-3">
+        {
+          SITE.social.map((s) => (
+            <a
+              href={s.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={s.label}
+              class="grid h-9 w-9 place-items-center rounded-md border border-line text-graphite transition-fluid hover:border-ink hover:text-ink"
+            >
+              <Icon name={s.icon} size={17} />
+            </a>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Client-only confirmation — no backend wired (demo dispatch).
+  const form = document.getElementById('dispatch-form') as HTMLFormElement | null;
+  const done = document.getElementById('dispatch-done');
+  form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    form.reset();
+    done?.classList.remove('hidden');
+  });
+</script>

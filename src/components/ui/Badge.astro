@@ -1,0 +1,32 @@
+---
+// ============================================================
+//  Badge — small mono label for tags (sale / new / sold out).
+// ============================================================
+import { cn } from '~/lib/utils';
+
+type Tone = 'ink' | 'accent' | 'muted' | 'outline';
+
+interface Props {
+  tone?: Tone;
+  class?: string;
+}
+
+const { tone = 'ink', class: className } = Astro.props;
+
+const tones: Record<Tone, string> = {
+  ink: 'bg-ink text-snow',
+  accent: 'bg-accent-strong text-white',
+  muted: 'bg-fog text-graphite',
+  outline: 'border border-line bg-paper/80 text-ink backdrop-blur-sm',
+};
+---
+
+<span
+  class={cn(
+    'inline-flex items-center eyebrow px-2 py-1 rounded-sm leading-none',
+    tones[tone],
+    className,
+  )}
+>
+  <slot />
+</span>
