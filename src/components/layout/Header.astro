@@ -5,10 +5,15 @@
 //  Nav is pulled from Shopify's "main-menu" with a safe fallback.
 // ============================================================
 import Logo from '~/components/ui/Logo.astro';
+import Icon from '~/components/ui/Icon.astro';
 import CartButton from '~/components/react/CartButton.tsx';
 import PredictiveSearch from '~/components/react/PredictiveSearch.tsx';
 import { getMenu } from '~/lib/shopify';
+import { getTokens } from '~/lib/shopify/customer';
 import { FALLBACK_NAV } from '~/config/site';
+
+// Server-side: is there a customer session cookie? Drives the account link.
+const isLoggedIn = getTokens(Astro.cookies) !== null;
 
 // Map a Shopify menu URL (absolute, store-domain) to a relative path.
 function toPath(url: string): string {
@@ -60,6 +65,13 @@ try {
     {/* Right — actions */}
     <div class="flex items-center justify-end gap-0.5">
       <PredictiveSearch client:idle />
+      <a
+        href="/account"
+        aria-label={isLoggedIn ? 'Your account' : 'Sign in'}
+        class="inline-flex h-10 w-10 items-center justify-center rounded-md text-graphite transition-fluid hover:text-ink"
+      >
+        <Icon name="user" />
+      </a>
       <CartButton client:load />
     </div>
   </div>
